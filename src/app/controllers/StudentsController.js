@@ -35,6 +35,12 @@ class StudentsController {
     return res.json({ name, email, years_old, weight, height });
   }
 
+  async index(req, res) {
+    const students = await Students.findAll();
+
+    return res.json(students);
+  }
+
   async update(req, res) {
     const schema = Yup.object().shape({
       name: Yup.string(),
@@ -52,9 +58,8 @@ class StudentsController {
     const { email } = req.body;
 
     // Send id via url params (http://localhost:3000/students/:id)
-    const { id } = req.params;
 
-    const student = await Students.findByPk(id);
+    const student = await Students.findByPk(req.params.id);
 
     if (email !== student.email) {
       const studentExists = Students.findOne({ where: { email } });
