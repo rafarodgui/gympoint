@@ -129,7 +129,16 @@ class RegistrationController {
   }
 
   async delete(req, res) {
-    return res.json();
+    const { index } = req.params;
+    const registration = await Registration.findAll();
+
+    if (!registration[index]) {
+      return res.status(400).json({ error: 'Registration not found' });
+    }
+
+    registration.splice(index, 1);
+
+    return res.json(registration);
   }
 }
 

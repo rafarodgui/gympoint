@@ -6,12 +6,15 @@ import PlansController from './app/controllers/PlansController';
 import SessionController from './app/controllers/SessionController';
 
 import RegistrationController from './app/controllers/RegistrationController';
+import CheckinsController from './app/controllers/CheckinsController';
 
 import authMiddleware from './app/middlewares/auth';
 
 const routes = new Router();
 // Admin login for be ablle to manipulate students data
 routes.post('/sessions', SessionController.store);
+
+routes.post('/students/:id/checkin', CheckinsController.store);
 
 routes.use(authMiddleware);
 // All students routes must have a authenticator middleware
@@ -27,6 +30,6 @@ routes.delete('/plans/:id', PlansController.delete);
 routes.post('/registration', RegistrationController.store);
 routes.get('/registration', RegistrationController.index);
 routes.put('/registration/:id', RegistrationController.update);
-routes.delete('/registration', RegistrationController.delete);
+routes.delete('/registration/:index', RegistrationController.delete);
 
 export default routes;
