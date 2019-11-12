@@ -28,8 +28,8 @@ routes.put('/plans/:id', PlansController.update);
 routes.delete('/plans/:id', PlansController.delete);
 
 routes.post('/registration', RegistrationController.store);
-routes.get('/registration', RegistrationController.index);
+routes.get('/registration/:id', RegistrationController.index);
 routes.put('/registration/:id', RegistrationController.update);
-routes.delete('/registration/:index', RegistrationController.delete);
+routes.delete('/registration/:id', RegistrationController.delete);
 
 export default routes;

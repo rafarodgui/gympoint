@@ -10,14 +10,14 @@ module.exports = {
       student_id: {
         type: Sequelize.INTEGER,
         allowNull: true,
-        refetences: { model: 'student', key: 'id' },
+        references: { model: 'students', key: 'id' },
         onDelete: 'CASCADE',
         onUpdate: 'SET NULL',
       },
       plan_id: {
         type: Sequelize.INTEGER,
         allowNull: true,
-        reference: { model: 'plans', key: 'id' },
+        references: { model: 'plans', key: 'id' },
         onDelete: 'CASCADE',
         onUpdate: 'SET NULL',
       },
@@ -40,6 +40,10 @@ module.exports = {
       updated_at: {
         type: Sequelize.DATE,
         allowNull: false,
+      },
+      cancelled_at: {
+        type: Sequelize.DATE,
+        allowNull: true,
       },
     });
   },

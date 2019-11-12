@@ -1,8 +1,10 @@
 import * as Yup from 'yup';
-import { isBefore, parseISO, startOfHour, addMonths } from 'date-fns';
+import { isBefore, parseISO, startOfHour, addMonths, format } from 'date-fns';
+import pt from 'date-fns/locale/pt';
 import Registration from '../models/Registration';
 import Students from '../models/Students';
 import Plans from '../models/Plans';
+import Mail from '../../lib/Mail';
 
 class RegistrationController {
   async store(req, res) {
@@ -23,13 +25,13 @@ class RegistrationController {
     /**
      * Check if student exists
      */
-    const studentExists = await Students.findOne({
+    const student = await Students.findOne({
       where: {
         id: student_id,
       },
     });
 
-    if (!studentExists) {
+    if (!student) {
       return res.status(401).json({ error: 'This student does not exists' });
     }
 
@@ -57,6 +59,10 @@ class RegistrationController {
 
     const end_date = await addMonths(hourStart, plan.duration);
 
+    const formattedEndDate = format(end_date, "dd'/'MM'/'yyyy", {
+      locale: pt,
+    });
+
     const price = plan.price * plan.duration;
 
     const registration = await Registration.create({
@@ -67,11 +73,29 @@ class RegistrationController {
       price,
     });
 
+    await Mail.sendMail({
+      to: ` ${student.name} <${student.email}>`,
+      subject: 'Matricula realizada',
+      template: 'registration',
+      context: {
+        student: student.name,
+        plan: plan.title,
+        duration: plan.duration,
+        endDate: formattedEndDate,
+      },
+    });
+
     return res.json(registration);
   }
 
   async index(req, res) {
-    const registrations = await Registration.findAll();
+    const registrations = await Registration.findAll({
+      where: {
+        student_id: req.params.id,
+        cancelled_at: null,
+      },
+    });
+
     return res.json(registrations);
   }
 
@@ -129,14 +153,48 @@ class RegistrationController {
   }
 
   async delete(req, res) {
-    const { index } = req.params;
-    const registration = await Registration.findAll();
+    const registration = await Registration.findByPk(req.params.id, {
+      include: [
+        {
+          model: Students,
+          as: 'student',
+          attributes: ['name', 'email'],
+        },
+        {
+          model: Plans,
+          as: 'plan',
+          attributes: ['title'],
+        },
+      ],
+    });
 
-    if (!registration[index]) {
+    if (!registration) {
       return res.status(400).json({ error: 'Registration not found' });
     }
 
-    registration.splice(index, 1);
+    registration.cancelled_at = new Date();
+
+    const formattedEndDate = format(registration.end_date, "dd'/'MM'/'yyyy");
+    const formattedStartDate = format(
+      registration.start_date,
+      "dd'/'MM'/'yyyy"
+    );
+    const formattedDate = format(registration.cancelled_at, "dd'/'MM'/'yyyy");
+
+    await registration.save();
+
+    await Mail.sendMail({
+      to: `${registration.student.name} <${registration.student.email}>`,
+      subject: 'Matricula Cancelada',
+      template: 'cancellation',
+      context: {
+        student: registration.student.name,
+        plan: registration.plan.title,
+        startDate: formattedStartDate,
+        endDate: formattedEndDate,
+        date: formattedDate,
+      },
+    });
 
     return res.json(registration);
   }
