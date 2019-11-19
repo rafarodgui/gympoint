@@ -4,13 +4,20 @@ class Checkins extends Model {
   static init(sequelize) {
     super.init(
       {
-        user_id: Sequelize.INTEGER,
+        student_id: Sequelize.NUMBER,
       },
       {
         sequelize,
       }
     );
     return this;
+  }
+
+  static associate(models) {
+    this.belongsTo(models.Students, {
+      foreignKey: 'student_id',
+      as: 'student',
+    });
   }
 }
 export default Checkins;

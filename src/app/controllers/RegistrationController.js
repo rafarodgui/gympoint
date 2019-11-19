@@ -4,7 +4,10 @@ import pt from 'date-fns/locale/pt';
 import Registration from '../models/Registration';
 import Students from '../models/Students';
 import Plans from '../models/Plans';
-import Mail from '../../lib/Mail';
+import Queue from '../../lib/Queue';
+
+import CancellationMail from '../jobs/CancellationMail';
+import RegistrationMail from '../jobs/RegistrationMail';
 
 class RegistrationController {
   async store(req, res) {
@@ -73,16 +76,11 @@ class RegistrationController {
       price,
     });
 
-    await Mail.sendMail({
-      to: ` ${student.name} <${student.email}>`,
-      subject: 'Matricula realizada',
-      template: 'registration',
-      context: {
-        student: student.name,
-        plan: plan.title,
-        duration: plan.duration,
-        endDate: formattedEndDate,
-      },
+    await Queue.add(RegistrationMail.key, {
+      student,
+      plan,
+      price,
+      formattedEndDate,
     });
 
     return res.json(registration);
@@ -174,26 +172,10 @@ class RegistrationController {
 
     registration.cancelled_at = new Date();
 
-    const formattedEndDate = format(registration.end_date, "dd'/'MM'/'yyyy");
-    const formattedStartDate = format(
-      registration.start_date,
-      "dd'/'MM'/'yyyy"
-    );
-    const formattedDate = format(registration.cancelled_at, "dd'/'MM'/'yyyy");
-
     await registration.save();
 
-    await Mail.sendMail({
-      to: `${registration.student.name} <${registration.student.email}>`,
-      subject: 'Matricula Cancelada',
-      template: 'cancellation',
-      context: {
-        student: registration.student.name,
-        plan: registration.plan.title,
-        startDate: formattedStartDate,
-        endDate: formattedEndDate,
-        date: formattedDate,
-      },
+    await Queue.add(CancellationMail.key, {
+      registration,
     });
 
     return res.json(registration);
