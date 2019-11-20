@@ -1,6 +1,6 @@
 import * as Yup from 'yup';
 import { Op } from 'sequelize';
-import { parseISO, addDays, startOfHour } from 'date-fns';
+import { addDays, startOfDay } from 'date-fns';
 import Checkins from '../models/Checkins';
 import Students from '../models/Students';
 
@@ -29,15 +29,38 @@ class CheckinsController {
       return res.status(401).json({ error: 'Incorrect Id' });
     }
 
+    const checkinLimit = await Checkins.findAll({
+      where: {
+        student_id,
+        createdAt: {
+          [Op.between]: [startOfDay(new Date()), addDays(new Date(), 7)],
+        },
+      },
+    });
+
+    if (checkinLimit.length >= 5) {
+      return res
+        .status(401)
+        .json({ error: 'Checkins limit are reached, try again later' });
+    }
+
     const checkin = await Checkins.create({ student_id });
 
     return res.json(checkin);
   }
 
   async index(req, res) {
+    const { id } = req.params;
+
+    const student = await Students.findByPk(id);
+
+    if (!student) {
+      return res.status(400).json({ error: 'Student not found' });
+    }
+
     const checkins = await Checkins.findAll({
       where: {
-        student_id: req.params.index,
+        student_id: id,
       },
     });
 
