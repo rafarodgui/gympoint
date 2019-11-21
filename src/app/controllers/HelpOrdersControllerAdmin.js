@@ -2,6 +2,7 @@ import * as Yup from 'yup';
 import HelpOrders from '../models/Help_orders';
 import Queue from '../../lib/Queue';
 import AnswerMail from '../jobs/AnswerMail';
+import Students from '../models/Students';
 
 class HelpOrdersControllerAdmin {
   async index(req, res) {
@@ -25,9 +26,15 @@ class HelpOrdersControllerAdmin {
         .json({ error: 'Check the informations and try again' });
     }
 
-    const { id } = req.params;
+    const help_order = await HelpOrders.findByPk(req.params.id, {
+      include: {
+        model: Students,
+        as: 'student',
+        attributes: ['name', 'email'],
+      },
+    });
 
-    const help_order = await HelpOrders.findByPk(id);
+    // const student = await Students.findByPk(help_order.studentId);
 
     help_order.answer_at = new Date();
 

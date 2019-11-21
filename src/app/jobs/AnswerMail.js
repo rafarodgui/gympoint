@@ -9,7 +9,14 @@ class AnswerMail {
     const { help_order } = data;
 
     await Mail.sendMail({
-      to: `${help_order.student_id.name} <${help_order.student_id.email}>`,
+      to: `${help_order.student.name} <${help_order.student.email}>`,
+      subject: 'Pergunta respondida GYMPOINT',
+      template: 'answer',
+      context: {
+        student: help_order.student.name,
+        question: help_order.question,
+        answer: help_order.answer,
+      },
     });
   }
 }
